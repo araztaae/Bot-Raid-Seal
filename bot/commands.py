@@ -97,7 +97,7 @@ def setup_commands(bot: commands.Bot) -> None:
             view = build_raid_view(session)
             if i == 0:
                 await interaction.edit_original_response(content=text, view=view)
-            if i == 1:
+            elif i == 1:
                 await interaction.followup.send(content=text, view=view
                 #,allowed_mentions=discord.AllowedMentions(roles=True)
                 )
