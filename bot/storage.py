@@ -32,6 +32,7 @@ def _build_session(session_row, slot_rows) -> dict:
         "created_at":    session_row["created_at"],
         "status":        session_row["status"] or "active",
         "expires_at":    session_row["expires_at"],
+        "guild_id":      session_row["guild_id"],
         "slots": [
             {
                 "role":             s["role"],
@@ -46,7 +47,7 @@ def _build_session(session_row, slot_rows) -> dict:
 
 # ── Public CRUD functions ─────────────────────────────────────────────────────
 
-def create_session(template_key: str, date_time: str, created_by: str) -> dict | None:
+def create_session(template_key: str, date_time: str, created_by: str, guild_id: int) -> dict | None:
     """Create a new raid session. Returns a dict built from memory — no second DB query needed."""
     template = RAID_TEMPLATES.get(template_key)
     if not template:
@@ -67,9 +68,9 @@ def create_session(template_key: str, date_time: str, created_by: str) -> dict |
     conn = get_connection()
     conn.execute(
         "INSERT INTO raid_sessions "
-        "(id, template_key, template_name, date_time, created_by, status, expires_at, created_at) "
-        "VALUES (?, ?, ?, ?, ?, 'active', ?, ?)",
-        (session_id, template_key, template.name, date_time, created_by,
+        "(id, guild_id, template_key, template_name, date_time, created_by, status, expires_at, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)",
+        (session_id, guild_id, template_key, template.name, date_time, created_by,
          expires_at, now.isoformat()),
     )
     for i, slot in enumerate(template.slots):
@@ -91,6 +92,7 @@ def create_session(template_key: str, date_time: str, created_by: str) -> dict |
         "created_at":    now.isoformat(),
         "status":        "active",
         "expires_at":    expires_at,
+        "guild_id":      guild_id,
         "slots": [
             {"role": s.role, "category": s.category,
              "claimed_by": None, "claimed_username": None}
@@ -115,7 +117,7 @@ def get_session(session_id: str) -> dict | None:
     return _build_session(row, slots)
 
 
-def get_all_sessions() -> list[dict]:
+def get_all_sessions(guild_id: int) -> list[dict]:
     """Fetch all active, non-expired sessions using a single JOIN query (no N+1 problem)."""
     conn = get_connection()
     rows = conn.execute("""
@@ -126,8 +128,9 @@ def get_all_sessions() -> list[dict]:
         LEFT JOIN raid_slots sl ON sl.session_id = s.id
         WHERE s.status = 'active'
           AND (s.expires_at IS NULL OR s.expires_at > datetime('now'))
+          AND s.guild_id = ?
         ORDER BY s.created_at, sl.slot_index
-    """).fetchall()
+    """,(guild_id,)).fetchall()
     conn.close()
 
     sessions: dict[str, dict] = {}

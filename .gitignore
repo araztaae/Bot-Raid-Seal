@@ -219,3 +219,4 @@ __marimo__/
 update.sh 
 raid.db 
 raid.db 
+raid.db  *.db-wal  *.db-shm 

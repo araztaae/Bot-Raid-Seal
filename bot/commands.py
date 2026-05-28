@@ -67,7 +67,7 @@ def setup_commands(bot: commands.Bot) -> None:
     ) -> None:
         """Create a new raid session. Date is today or tomorrow based on the chosen time."""
         date_time = _build_date_time(hour, minute)
-        session   = create_session(raid_type, date_time, str(interaction.user.id))
+        session   = create_session(raid_type, date_time, str(interaction.user.id), interaction.guild.id)
         pingid    = get_role_mention(interaction.guild,session["template_name"])
         
         if not session:
@@ -86,7 +86,7 @@ def setup_commands(bot: commands.Bot) -> None:
     @bot.tree.command(name="raid-list", description="Show all active raid sessions")
     async def raid_list(interaction: discord.Interaction) -> None:
         """Display up to 5 active (non-expired) sessions with Join/Leave buttons."""
-        sessions = get_all_sessions()
+        sessions = get_all_sessions(interaction.guild.id)
         if not sessions:
             await interaction.response.send_message("📭 No active raid sessions found.")
             return

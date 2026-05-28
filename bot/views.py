@@ -100,8 +100,14 @@ def build_raid_text(guild: discord.Guild,session: dict) -> str:
         claimed = f"**{slot['claimed_username']}**" if slot["claimed_by"] else "[Unclaimed]"
         lines.append(f"🔮 **{slot['role']}:** {claimed}")
 
-    if hitter_slots:
+    if hitter_slots and len(hitter_slots) == 5:
         lines.append("⚔️ **Hitters:**")
+        for i, slot in enumerate(hitter_slots):
+            claimed   = f"**{slot['claimed_username']}**" if slot["claimed_by"] else "[Unclaimed]"
+            connector = "┗" if i == len(hitter_slots) - 1 else "┣"
+            lines.append(f"   {connector} ⚔️ {slot['role']} = {claimed}")
+    else:
+        lines.append("⚔️ Participants:")
         for i, slot in enumerate(hitter_slots):
             claimed   = f"**{slot['claimed_username']}**" if slot["claimed_by"] else "[Unclaimed]"
             connector = "┗" if i == len(hitter_slots) - 1 else "┣"

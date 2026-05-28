@@ -52,6 +52,7 @@ def init_db() -> None:
     for col, definition in [
         ("status",     "TEXT NOT NULL DEFAULT 'active'"),
         ("expires_at", "TEXT"),
+        ("guild_id",   "INT"),
     ]:
         try:
             conn.execute(f"ALTER TABLE raid_sessions ADD COLUMN {col} {definition}")
