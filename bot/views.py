@@ -86,8 +86,12 @@ def build_raid_text(guild: discord.Guild,session: dict) -> str:
     if is_done:
         lines.append("## ✅ DUNGEON COMPLETED ✅")
 
+    initiator_id = session.get("created_by")
+    initiator_text = f"<@{initiator_id}>" if initiator_id else "Unknown"
+
     lines += [
         f"**Date & Time : {date_display}**",
+        f"👤 **Initiated by:** {initiator_text}",
         SEPARATOR,
         get_role_mention(guild,session["template_name"]),
     ]
