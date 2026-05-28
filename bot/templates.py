@@ -45,7 +45,7 @@ RAID_TEMPLATES: dict[str, RaidTemplate] = {
         ],
     ),
     "wandering": RaidTemplate(
-        name="The Wandering Troupe",
+        name="Wandering Troupe",
         slots=[
             SlotTemplate("Any Roles",     "hitter"),
             SlotTemplate("Any Roles",     "hitter"),
