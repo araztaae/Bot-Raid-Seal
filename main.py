@@ -10,6 +10,7 @@ from bot.commands import setup_commands
 from bot.db import init_db
 from bot.storage import (
     cleanup_expired_sessions,
+    check_raid_reminders,
     claim_slot,
     delete_session,
     get_session,
