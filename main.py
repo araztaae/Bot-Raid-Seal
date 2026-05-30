@@ -41,6 +41,7 @@ bot     = commands.Bot(command_prefix="!", intents=intents)
 async def _auto_cleanup() -> None:
     """Background task: delete expired sessions every minutes."""
     await cleanup_expired_sessions(bot)
+    await check_raid_reminders(bot)
 
 
 @bot.event
