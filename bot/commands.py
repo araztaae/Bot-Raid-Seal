@@ -4,9 +4,17 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .storage import clear_all_sessions, create_session, get_all_sessions, set_message_ref
+from .storage import (
+    active_session_autocomplete,
+    update_session,
+    get_session,
+    clear_all_sessions, 
+    create_session, 
+    get_all_sessions, 
+    set_message_ref,
+    )
 from .templates import RAID_TEMPLATES
-from .views import build_raid_text, build_raid_view, get_role_mention
+from .views import build_raid_text, build_raid_view, get_role_mention, _parse_raid_datetime
 
 _MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -22,6 +30,9 @@ _MINUTE_CHOICES = [
     app_commands.Choice(name=f"--:{m:02d}", value=m)
     for m in range(0, 60, 10)
 ]
+
+# Session choice for edit hour
+    
 
 
 def _build_date_time(hour: int, minute: int) -> str:
@@ -59,6 +70,7 @@ def setup_commands(bot: commands.Bot) -> None:
         hour=_HOUR_CHOICES,
         minute=_MINUTE_CHOICES,
     )
+    
     async def raid_open(
         interaction: discord.Interaction,
         raid_type: str,
@@ -68,7 +80,6 @@ def setup_commands(bot: commands.Bot) -> None:
         """Create a new raid session. Date is today or tomorrow based on the chosen time."""
         date_time = _build_date_time(hour, minute)
         session   = create_session(raid_type, date_time, str(interaction.user.id), interaction.guild.id, interaction.channel.id)
-        pingid    = get_role_mention(interaction.guild,session["template_name"])
         
         if not session:
             await interaction.response.send_message("❌ Invalid raid type.", ephemeral=True)
@@ -77,6 +88,52 @@ def setup_commands(bot: commands.Bot) -> None:
         text = build_raid_text(interaction.guild,session)
         view = build_raid_view(session)
 
+        await interaction.response.send_message(text, view=view,
+            allowed_mentions=discord.AllowedMentions(roles=True))
+        msg = await interaction.original_response()
+        set_message_ref(session["id"], str(msg.id), str(interaction.channel_id))
+        
+    # ── /edit_time ───────────────────────────────────────
+
+    @bot.tree.command(
+        name="edit_time",
+        description="Reedit time Session"
+    )
+    @app_commands.describe(
+        session_id="Session id do you want to change",
+        hour="Raid start hour (GMT+7, 24-hour)",
+        minute="Raid start minute (multiples of 10)",
+    )
+    @app_commands.autocomplete(
+        session_id=active_session_autocomplete, 
+    )
+    @app_commands.choices(
+        hour=_HOUR_CHOICES,
+        minute=_MINUTE_CHOICES,
+    )
+    async def edit_time(
+        interaction: discord.Interaction,
+        session_id: str,
+        hour: int,
+        minute: int,
+    ) -> None:
+        date_time = _build_date_time(hour, minute)
+        session = get_session(session_id)
+        session["date_time"] = date_time
+        
+        raid_dt=_parse_raid_datetime(date_time)
+        if raid_dt:
+            expires_at = (raid_dt.astimezone(timezone.utc) + timedelta(minutes=10)).isoformat()
+        
+        text = build_raid_text(interaction.guild,session)
+        view = build_raid_view(session)
+        
+        update_session(
+            session_id,
+            date_time=date_time,
+            expires_at=expires_at
+        )
+        
         await interaction.response.send_message(text, view=view,
             allowed_mentions=discord.AllowedMentions(roles=True))
         msg = await interaction.original_response()
@@ -93,6 +150,7 @@ def setup_commands(bot: commands.Bot) -> None:
                 "%d %b %Y | %H:%M GMT+7"
             )
         )
+        print(sessions)
         if not sessions:
             await interaction.response.send_message("📭 No active raid sessions found.")
             return

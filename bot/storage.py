@@ -1,5 +1,7 @@
 from datetime import datetime, timezone, timedelta
+import discord
 
+from discord import app_commands
 from .db import get_connection
 from .templates import RAID_TEMPLATES
 from .views import _parse_raid_datetime
@@ -158,6 +160,89 @@ def get_all_sessions(guild_id: int) -> list[dict]:
                 "claimed_username": row["claimed_username"],
             })
     return list(sessions.values())
+    
+# auto complete coice
+async def active_session_autocomplete(
+        interaction: discord.Interaction,
+        curren: str,
+    ):
+        sessions = get_all_sessions(interaction.guild.id)
+        
+        choices = []
+
+        for session in sessions:
+            if session["status"] != "active":
+                continue
+
+            member = interaction.guild.get_member(
+                int(session["created_by"])
+            )
+            
+            if member is None:
+                member = await interaction.guild.fetch_member(
+                    int(session["created_by"])
+                )
+            
+            if member:
+                creator_name = (
+                    member.global_name
+                    or member.display_name
+                    or member.name
+                )
+            else:
+                creator_name = session["created_by"]
+
+            choices.append(
+                app_commands.Choice(
+                    name=f'#{session["id"]} - {creator_name}',
+                    value=session["id"]
+                )
+            )
+
+        return choices[:25]
+        
+def update_session(session_id: str, **fields) -> bool:
+    """
+    Update field raid_sessions berdasarkan session_id.
+
+    Contoh:
+        update_session("1", date_time="5 Jun 2026 | 10:40 GMT+7")
+        update_session("1", status="closed")
+    """
+    if not fields:
+        return False
+
+    conn = get_connection()
+
+    cursor = conn.execute(
+        "SELECT 1 FROM raid_sessions WHERE id = ?",
+        (session_id,)
+    )
+
+    if cursor.fetchone() is None:
+        conn.close()
+        return False
+
+    set_clause = ", ".join(
+        f"{column} = ?" for column in fields.keys()
+    )
+
+    values = list(fields.values())
+    values.append(session_id)
+
+    conn.execute(
+        f"""
+        UPDATE raid_sessions
+        SET {set_clause}
+        WHERE id = ?
+        """,
+        values,
+    )
+
+    conn.commit()
+    conn.close()
+
+    return True
 
 
 def delete_session(session_id: str) -> bool:

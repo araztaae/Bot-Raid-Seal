@@ -71,7 +71,7 @@ def get_role_mention(guild: discord.Guild,role_name: str) -> str:
     return f"@{role_name}"
     
 
-def build_raid_text(guild: discord.Guild,session: dict) -> str:
+def build_raid_text(guild: discord.Guild, session: dict ) -> str:
     """Build the full message text for a raid session."""
     is_done       = session.get("status") == "done"
     apostle_slots = [s for s in session["slots"] if s["category"] == "apostle"]
