@@ -34,7 +34,8 @@ def init_db() -> None:
             channel_id    TEXT,
             created_at    TEXT NOT NULL,
             status        TEXT NOT NULL DEFAULT 'active',
-            expires_at    TEXT
+            expires_at    TEXT,
+            reminder_sent	INTEGER NOT NULL DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS raid_slots (
@@ -44,8 +45,7 @@ def init_db() -> None:
             role             TEXT NOT NULL,
             category         TEXT NOT NULL,
             claimed_by       TEXT,
-            claimed_username TEXT,
-            reminder_sent	INTEGER NOT NULL DEFAULT 0
+            claimed_username TEXT  
         );
     """)
 

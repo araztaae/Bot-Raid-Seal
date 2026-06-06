@@ -167,11 +167,10 @@ async def active_session_autocomplete(
         curren: str,
     ):
         sessions = get_all_sessions(interaction.guild.id)
-        
         choices = []
 
         for session in sessions:
-            if session["status"] != "active":
+            if session["status"] != "active" or int(session["created_by"]) != interaction.user.id:
                 continue
 
             member = interaction.guild.get_member(
