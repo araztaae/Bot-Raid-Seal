@@ -166,31 +166,26 @@ async def active_session_autocomplete(
         interaction: discord.Interaction,
         curren: str,
     ):
-        sessions = get_all_sessions(interaction.guild.id)
+        conn = get_connection()
+        rows  = conn.execute("""
+            SELECT *
+            FROM raid_sessions 
+            WHERE status = "active"
+            AND created_by = ?
+        """,(interaction.user.id,)).fetchall()
+        conn.close()
+       
         choices = []
-
-        for session in sessions:
-            if session["status"] != "active" or int(session["created_by"]) != interaction.user.id:
-                continue
-
-            member = interaction.guild.get_member(
-                int(session["created_by"])
+        
+        creator_name = (
+                interaction.user.display_name
+                or interaction.user.global_name
+                or interaction.user.name
             )
             
-            if member is None:
-                member = await interaction.guild.fetch_member(
-                    int(session["created_by"])
-                )
+        for session in rows:
+            print(session)
             
-            if member:
-                creator_name = (
-                    member.global_name
-                    or member.display_name
-                    or member.name
-                )
-            else:
-                creator_name = session["created_by"]
-
             choices.append(
                 app_commands.Choice(
                     name=f'#{session["id"]} - {creator_name}',
