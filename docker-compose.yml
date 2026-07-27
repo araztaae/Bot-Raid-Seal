@@ -1,0 +1,10 @@
+services:
+  bot:
+    build: .
+    container_name: raid-bot
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./raid.db:/app/raid.db
+    ports:
+      - "3000:3000"
