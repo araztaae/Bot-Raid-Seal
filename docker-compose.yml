@@ -1,7 +1,7 @@
 services:
   bot:
     build: .
-    container_name: raid-bot
+    container_name: abyssal
     restart: unless-stopped
     env_file: .env
     volumes:
